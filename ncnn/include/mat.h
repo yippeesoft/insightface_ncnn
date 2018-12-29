@@ -20,7 +20,6 @@
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif
-#include "platform.h"
 
 namespace ncnn {
 
@@ -89,7 +88,6 @@ public:
     float& operator[](int i);
     const float& operator[](int i) const;
 
-#if NCNN_PIXEL
     enum
     {
         PIXEL_CONVERT_SHIFT = 16,
@@ -120,10 +118,9 @@ public:
     static Mat from_pixels_resize(const unsigned char* pixels, int type, int w, int h, int target_width, int target_height);
 
     // convenient export to pixel data
-    void to_pixels(unsigned char* pixels, int type) const;
+    void to_pixels(unsigned char* pixels, int type);
     // convenient export to pixel data and resize to specific size
-    void to_pixels_resize(unsigned char* pixels, int type, int target_width, int target_height) const;
-#endif // NCNN_PIXEL
+    void to_pixels_resize(unsigned char* pixels, int type, int target_width, int target_height);
 
     // substract channel-wise mean values, then multiply by normalize values, pass 0 to skip
     void substract_mean_normalize(const float* mean_vals, const float* norm_vals);
@@ -156,12 +153,10 @@ public:
 };
 
 // misc function
-#if NCNN_PIXEL
 // image pixel bilinear resize
 void resize_bilinear_c1(const unsigned char* src, int srcw, int srch, unsigned char* dst, int w, int h);
 void resize_bilinear_c3(const unsigned char* src, int srcw, int srch, unsigned char* dst, int w, int h);
 void resize_bilinear_c4(const unsigned char* src, int srcw, int srch, unsigned char* dst, int w, int h);
-#endif // NCNN_PIXEL
 
 // mat process
 enum
@@ -348,20 +343,10 @@ inline void Mat::fill(float _v)
 #if __ARM_NEON
     float32x4_t _c = vdupq_n_f32(_v);
 #if __aarch64__
-    if (nn > 0)
+    for (; nn>0; nn--)
     {
-    asm volatile (
-        "0:                             \n"
-        "subs       %w0, %w0, #1        \n"
-        "st1        {%4.4s}, [%1], #16  \n"
-        "bne        0b                  \n"
-        : "=r"(nn),     // %0
-          "=r"(ptr)     // %1
-        : "0"(nn),
-          "1"(ptr),
-          "w"(_c)       // %4
-        : "cc", "memory"
-    );
+        vst1q_f32(ptr, _c);
+        ptr += 4;
     }
 #else
     if (nn > 0)
@@ -529,9 +514,6 @@ inline Mat Mat::reshape(int _w, int _h, int _c) const
 
 inline void Mat::create(int _w, size_t _elemsize)
 {
-    if (dims == 1 && w == _w && elemsize == _elemsize)
-        return;
-
     release();
 
     elemsize = _elemsize;
@@ -554,9 +536,6 @@ inline void Mat::create(int _w, size_t _elemsize)
 
 inline void Mat::create(int _w, int _h, size_t _elemsize)
 {
-    if (dims == 2 && w == _w && h == _h && elemsize == _elemsize)
-        return;
-
     release();
 
     elemsize = _elemsize;
@@ -579,9 +558,6 @@ inline void Mat::create(int _w, int _h, size_t _elemsize)
 
 inline void Mat::create(int _w, int _h, int _c, size_t _elemsize)
 {
-    if (dims == 3 && w == _w && h == _h && c == _c && elemsize == _elemsize)
-        return;
-
     release();
 
     elemsize = _elemsize;
