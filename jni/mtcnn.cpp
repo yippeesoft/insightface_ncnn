@@ -1,5 +1,5 @@
 #include "mtcnn.h"
-
+#include <iostream>
 MtcnnDetector::MtcnnDetector(string model_folder)
 {
     vector<string> param_files = {
@@ -14,14 +14,16 @@ MtcnnDetector::MtcnnDetector(string model_folder)
         model_folder + "/det3.bin",
         model_folder + "/det4.bin"
     };
-    this->Pnet.load_param(param_files[0].c_str());
+    int i=this->Pnet.load_param(param_files[0].c_str());
+    cout << "Detection load_param: " <<i<<std::endl;
     this->Pnet.load_model(bin_files[0].c_str());
     this->Rnet.load_param(param_files[1].c_str());
     this->Rnet.load_model(bin_files[1].c_str());
     this->Onet.load_param(param_files[2].c_str());
     this->Onet.load_model(bin_files[2].c_str());
     this->Lnet.load_param(param_files[3].c_str());
-    this->Lnet.load_model(bin_files[3].c_str());
+    int j=this->Lnet.load_model(bin_files[3].c_str());
+    cout << "Detection load_model: " <<i<<std::endl;
 }
 
 MtcnnDetector::~MtcnnDetector()
@@ -38,19 +40,22 @@ vector<FaceInfo> MtcnnDetector::Detect(ncnn::Mat img)
     int img_h = img.h;
 
     vector<FaceInfo> pnet_results = Pnet_Detect(img);
+    cout << "Pnet_Detect results11: " <<pnet_results.size()<<std::endl;
     doNms(pnet_results, 0.7, "union");
     refine(pnet_results, img_h, img_w, true);
 
     vector<FaceInfo> rnet_results = Rnet_Detect(img, pnet_results);
+    cout << "Rnet_Detect results11: " <<rnet_results.size()<<std::endl;
     doNms(rnet_results, 0.7, "union");
     refine(rnet_results, img_h, img_w, true);
 
     vector<FaceInfo> onet_results = Onet_Detect(img, rnet_results);
+    cout << "Onet_Detect results11: " <<onet_results.size()<<std::endl;
     refine(onet_results, img_h, img_w, false);
     doNms(onet_results, 0.7, "min");
 
     Lnet_Detect(img, onet_results);
-
+    cout << "Lnet_Detect results11: " <<onet_results.size()<<std::endl;
     return onet_results;
 }
 

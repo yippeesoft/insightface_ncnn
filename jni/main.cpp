@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <jni.h>
 #include <opencv2/opencv.hpp>
 #include "arcface.h"
 #include "mtcnn.h"
@@ -33,10 +34,11 @@ int main(int argc, char* argv[])
         img2 = imread(argv[2]);
     }
     else{
-        img1 = imread("../image/gyy1.jpeg");
-        img2 = imread("../image/gyy2.jpeg");
+        img1 = imread("./yjz.jpg");
+        img2 = imread("./yjz2.jpg");
     }
     ncnn::Mat ncnn_img1 = ncnn::Mat::from_pixels(img1.data, ncnn::Mat::PIXEL_BGR, img1.cols, img1.rows);
+    cout << "Detection ncnn_img1: " <<img1.cols << img1.rows<<std::endl;
     ncnn::Mat ncnn_img2 = ncnn::Mat::from_pixels(img2.data, ncnn::Mat::PIXEL_BGR, img2.cols, img2.rows);
 
     MtcnnDetector detector("../models");
@@ -44,14 +46,16 @@ int main(int argc, char* argv[])
     double start = (double)getTickCount();
     vector<FaceInfo> results1 = detector.Detect(ncnn_img1);
     cout << "Detection Time: " << (getTickCount() - start) / getTickFrequency() << "s" << std::endl;
-
+    cout << "Detection results11: " <<results1.size()<<std::endl;
     start = (double)getTickCount();
     vector<FaceInfo> results2 = detector.Detect(ncnn_img2);
     cout << "Detection Time: " << (getTickCount() - start) / getTickFrequency() << "s" << std::endl;
-
+    cout << "Detection results2: " <<results2.size()<<std::endl;
     ncnn::Mat det1 = preprocess(ncnn_img1, results1[0]);
+    cout << "Detection Time2: " <<std::endl;
+
     ncnn::Mat det2 = preprocess(ncnn_img2, results2[0]);
-    
+    cout << "Detection Time3: " <<std::endl;
     //for (auto it = results1.begin(); it != results1.end(); it++)
     //{
     //    rectangle(img1, cv::Point(it->x[0], it->y[0]), cv::Point(it->x[1], it->y[1]), cv::Scalar(0, 255, 0), 2);
@@ -73,7 +77,7 @@ int main(int argc, char* argv[])
     //}
 
     Arcface arc("../models");
-
+    cout << "Arcface arc: " <<std::endl;
     start = (double)getTickCount();
     vector<float> feature1 = arc.getFeature(det1);
     cout << "Extraction Time: " << (getTickCount() - start) / getTickFrequency() << "s" << std::endl;
@@ -87,9 +91,9 @@ int main(int argc, char* argv[])
     //imshow("img1", img1);
     //imshow("img2", img2);
 
-    imshow("det1", ncnn2cv(det1));
-    imshow("det2", ncnn2cv(det2));
+    // imshow("det1", ncnn2cv(det1));
+    // imshow("det2", ncnn2cv(det2));
 
-    waitKey(0);
+    // waitKey(0);
     return 0;
 }
